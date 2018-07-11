@@ -1,5 +1,3 @@
-# C--Notes
-
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 							STRINGS
@@ -191,6 +189,16 @@
 
 		string s = "Danger No Smoking";
 		s = s.Replace(' ', '!');							// Danger!No!Smoking
+
+	(iv) Converting string to char array
+
+		string s = "hello";
+		s = s.ToCharArray();
+
+	(v) Converting char array to string
+
+		char[] a = {'a', 'b', 'c'};
+		string s = new string(a);
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 9. Formatting:
@@ -477,7 +485,7 @@
 	}
 
 	
-	(vi) Loose Coupling in C# using interfaces - http://www.dotnetfunda.com/articles/show/2319/implement-decouple-architecture-in-interface
+	(vi) Service Locator - Loose Coupling in C# using interfaces - http://www.dotnetfunda.com/articles/show/2319/implement-decouple-architecture-in-interface
 
 	namespace BlogProject {
 		
@@ -523,7 +531,413 @@
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-							DEPENDENCY INJECTION
+						     DEPENDENCY INJECTION
 				http://www.tutorialsteacher.com/ioc/register-and-resolve-in-unity-container
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+1. Inversion of Control (IoC)     			------------------->    		
+						              Principle
+2. Dependency Injection Principle (DIP)		------------------->		
+
+
+3. Dependency Injection (DI)			-------------------> Pattern that implements IoC principles to achieve loose coupling
+4. IoC Containers - 3rd Party			-------------------> FrameWork for automatic dependency injection
+
+
+
+	(i) Inversion of Control
+
+		public class A {
+			B b;
+
+			public A() {
+				b = new B();
+			}
+
+			public void Task1 () {
+				b.SomeMethod();
+			}
+		}
+
+		public class B {
+			public void SomeMethod () {
+				//doing something
+			}
+		}
+
+	(a) Class A is dependent on class B
+	(b) Class B is a dependency of class A
+	(c) It controls the creation and lifetime of objects of dependency class
+	(d) IoC principle suggests to invert the control, means separate the controlling stuff to another class.
+
+
+	(ii)	public class A {
+			B b;
+
+			public A() {
+				b = Factory.GetObjectOfB();	// Solution
+			}
+
+			public void SomeMethod() {
+				b.SomeMethod();
+			}
+		}
+
+		public class Factory {
+			public static void SomeMethod () {
+				return new B();		// This factory method returns object of the B class
+			}
+		}
+
+	(a) Dependent object creation is inverted from class A to Factory class
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+							EXAMPLE
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	
+1.  In the typical n-tier architecture, the User Interface (UI) uses Service layer to retrieve or save the data.
+    The service layer uses the BusinessLogic class to apply business rules on the data.
+    The BusinessLogic class depends on the DataAccess class which retrieves or saves the data to the underlying database. 
+    This is simple n-tier architecture design. Let's focus on the BusinessLogic and DataAccess class to understand IoC.
+
+
+
+	public class BusinessLogicLayer {
+		
+		DataAccessLayer DalObject;				// Object Creation of DataAcessLayer
+
+		public BusinessLogicLayer() {
+			DalObject = new DataAccessLayer();
+		}
+
+		public string GetCustomerName(int id) {
+			return DalObject.GetCustomerName(id);
+		}
+	}
+
+	public class DataAccessLayer {
+		public DataAccessLayer() {
+
+		}
+
+		public string GetCustomerName(int id) {
+			return "Prajwal";
+		}
+	}
+
+	(i) BusinessLogicLayer class is dependent on DataAccessLayer class.
+
+	(ii) In the above example, BusinessLogicLayer and DataAccessLayer are tightly coupled classes because
+	      BusinessLogicLayer class includes the reference of concrete DataAccessLayer class. 
+	      It also creates an object of DataAccessLayer class and manages the lifetime of an object.
+
+	(iii) CustomerBusinessLogic and DataAccess classes are tightly coupled classes. 
+	       So, changes in the DataAccess class will lead to changes in the CustomerBusinessLogic class.
+	       For example, if we add, remove or rename any method in DataAccess class
+	       then we need to change CustomerBusinessLogic class accordingly.
+
+	(iv) Suppose, customer data comes from different databases or web service in future 
+	       we may need to create different classes for so it leads to changes in CustomerBusinessLogic class.
+
+	(v) CustomerBusinessLogic class creates an object of DataAccess class using new keyword. 
+	      There may be multiple classes which use DataAccess class and create its object. 
+	      So if you change the name of the class, then you need to find all the places in your source code
+	      where you create objects of DataAccess and make the change throughout the code. 
+	      This is repetitive code for creating an object of same class and maintaining its dependencies.
+
+	(vi) Because CustomerBusinessLogic class creates an object of concrete DataAccess class, 
+	       it cannot be tested independently (TDD). DataAccess class cannot be replaced with mock class.
+
+	(vii) So, to solve the above problems and get a loosely coupled design, we can use IoC and DIP principles together.
+
+	(viii) Patterns to achieve IoC :
+		(a) Factory
+		(b) Service Locator
+		(c) Abstract Factory
+		(d) Template Method
+		(e) Strategy
+		(f) Dependency Injection
+
+
+ Step 1: - Implement Factory Class
+
+	
+	public class DataAccessFactory {
+		public static DataAccessLayer GetDataAccessObject() {
+			return new DataAccessLayer();
+		}
+	}
+
+	public class BusinessLogicLayer {
+	
+		public BusinessLogicLayer() {
+			
+		}
+
+		public string GetCustomerName(int id) {
+			
+			DataAccessLayer DalObject = DataAccessFactory.GetDataAccessObject();
+			return DalObject.GetCustomerName(id);
+		}
+	}
+
+Step 2:-	Implement Dependency Inversion Principle (DIP)
+
+	1. High level modules should not depend on Low level Modules.
+	2. Abstraction should not depend on details, details should depend on abstraction.
+
+
+	public class DataAccessFactory {
+		public static DataAccessLayer GetDataAccessObject() {
+			return new DataAccessLayer();
+		}
+	}
+
+	public class BusinessLogicLayer {
+	
+		public BusinessLogicLayer() {
+			
+		}
+
+		public string GetCustomerName(int id) {
+			
+			DataAccessLayer DalObject = DataAccessFactory.GetDataAccessObject();
+			return DalObject.GetCustomerName(id);
+		}
+	}
+
+	public class DataAccessLayer {
+		public DataAccessLayer() {
+
+		}
+
+		public string GetCustomerName(int id) {
+			return "Prajwal";
+		}
+	}
+
+	(a) In the above example, we implemented factory pattern to achieve IoC. But, CustomerBusinessLogic class
+	      uses concrete DataAccess class. So still it is tightly coupled even though we have inverted the
+	      dependent object creation to the factory class.
+
+	(b) As per DIP definition, a high-level module should not depend on low-level modules. 
+	      Both should depend on abstraction. So, first, decide which is the high-level module (class) and low-level module.
+	      High-level module is a module which depends on other modules. 
+	      In our example, CustomerBusinessLogic depends on DataAccess class, so CustomerBusinessLogic is high-level
+	     module and DataAccess is low-level module. So, as per first rule of DIP, CustomerBusinessLogic should 
+	     not depends on concrete DataAccess class, instead both classes depends on abstraction.
+
+
+3. Use IoC containers to automatically use DI. e.g Unity, ninject
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+							DELEGATES
+					http://www.tutorialsteacher.com/csharp/csharp-delegates
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+1. Delegates contains the reference to a function.
+	
+	(a) Define a delegate type
+	(b) Create an Instance of the delegate type.
+	(c) Pass in the delegate instance as a parameter to the workhorse method.
+	(d) Invoke the delegate to help do the job.
+	(e) Invoking the delegate invokes the callback method.
+
+2. Delegate is a data type, we can create an instance of the delegate type.
+
+3. Example
+
+	(a) Simple delegate
+
+	class Program {
+ 
+		// declare delegate
+		public delegate void Print(int value);
+
+		static void Main(string[] args)
+    		{
+        
+			// Print delegate points to PrintNumber
+        			Print printDel = PrintNumber;
+			 	      OR
+			Print printDel = new Print(PrintNumber);
+          
+        			printDel(100000);
+        			printDel(200);
+
+        			// Print delegate points to PrintMoney
+        			printDel = PrintMoney;
+
+       			 printDel(10000);
+        			printDel(200);
+    		}
+
+    		public static void PrintNumber(int num)
+    		{
+        			Console.WriteLine("Number: {0,-12:N0}",num);
+   		 }
+
+    		public static void PrintMoney(int money)
+    		{
+       		 Console.WriteLine("Money: {0:C}", money);
+    		}
+	}
+
+
+	(b) Passing Delegate as a parameter
+	
+	namespace SimpleDelegateExample {
+
+		class Program {
+
+			delegate int MyDelType(string name);					// Delegate definition
+
+			static void Main( string[] args) {
+				
+				MyDelType del = new MyDelType(Program.CallBackMethod);		// Delegate instance creation pointing 
+											// to the CallBackMethod below
+
+				UseTheDel(del,"hello");					// Call workhorse method to invoke the delegate
+				
+			}
+
+			private static void UseTheDel( MyDelType del, string arg) {			// workhorse method to invoke the delegate		
+
+				if(del == null) { return; }
+
+				Console.WriteLine("UseTheDel writes {0}", del(arg));
+
+			}
+
+			public static int CallBackMethod (string stringPassed) {			// CallBackMethod
+				
+				Console.WriteLine("CallBack method writes {0}", stringPassed);
+				Return stringPassed.Length;				
+
+			}
+			
+		}
+
+	} 
+
+
+	(c) Multicast Delegate
+
+	public delegate void Print(int value);
+
+	static void Main(string[] args)
+	{       
+    		Print printDel = PrintNumber;
+    		printDel += PrintHexadecimal;
+   		 printDel += PrintMoney;
+
+    		printDel(100000);
+	}
+
+	public static void PrintNumber(int num)
+	{
+    		Console.WriteLine("Number: {0,-12:N0}",num);
+	}
+
+	public static void PrintMoney(int money)
+	{
+    		Console.WriteLine("Money: {0:C}", money);
+	}
+
+	public static void PrintHexadecimal(int dec)
+	{
+    		Console.WriteLine("Hexadecimal: {0:X}", dec);
+	}
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+							ANONYMOUS METHODS
+					    http://www.tutorialsteacher.com/csharp/csharp-delegates
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1. Methods without name.
+2. Can be defined by using keyword "delegate".
+
+		class Program {
+
+			public delegate void Print(int n);
+
+			static void Main(string[] args) {
+
+				Print print = delegate(int n) {
+					Console.WriteLine("Inside Anonymous method {0}", n);
+				};	
+
+				print(100);		
+			}
+		}
+
+3. Pass anonymous method as function parameter
+
+		
+		class Program {
+
+			public delegate void Print (int value);
+
+			public static void PrintHelperMethod(Print del, val) {
+
+				val += 1;
+				del(val);
+
+			}
+
+			static void Main(string[] args) {
+
+				PrintHelperMethod( delegate(int val){Console.WriteLine("Inside anonymous method {0}",val);} , 100 );
+			
+			}
+
+		
+		}
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+							Lambda Expression
+					    http://www.tutorialsteacher.com/linq/linq-lambda-expression
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+1. Lambda expression is a shorter way to express anonymous methods.
+
+
+		class Program {
+
+			public delegate void Print (int value);
+
+			static void Main(string[] args) {
+
+				Print print = (val) => {Console.WriteLine("Inside Lambda expression {0}", val);};
+
+							OR
+
+				Print print = val => Console.WriteLine(val);
+
+				print(10);
+			
+			}
+		}
+
+
+
+
+
+
+
+
+
+
+	
